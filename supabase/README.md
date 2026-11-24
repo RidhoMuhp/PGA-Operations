@@ -25,6 +25,8 @@ Then run `npm run dev`. The app loads data from `GET /api/operations`; scan, rep
 
 ## Netlify preview safety
 
-`netlify.toml` configures the Next.js build only; it does not make a deploy preview private. The API is disabled outside local development and Netlify Deploy Previews. Before adding the two server environment variables to Netlify, enable Netlify's visitor-access protection for deploy previews in the site's dashboard. Do not deploy this service-role-backed API to a public site: the app does not yet have user authentication or authorization.
+`netlify.toml` configures the Next.js build only; it does not protect a site. The API is enabled for local development and Netlify Deploy Previews. To test on the production deploy, first protect **all deploys including production** with Netlify site password protection or team login, and keep the Supabase variables pointed at staging. Then set `OPERATIONS_API_ALLOW_PROTECTED_PRODUCTION=true` for the **Production** deploy context in Netlify. Without that explicit flag the API stays disabled in Production.
+
+The app does not have its own user authentication or authorization. Do not enable the production flag or expose this service-role-backed API on a public site. Ensure Netlify's access protection covers API requests as well as pages.
 
 Keep the Supabase project on staging for this phase, and do not commit `.env.local` or copy the service-role key into client-side variables.
