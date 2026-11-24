@@ -2,93 +2,199 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
-  BarChart3, Box, ChevronDown, ClipboardCheck, Factory, FileClock,
-  LayoutDashboard, Menu, PackageOpen, Recycle, Users, X,
+  Bell,
+  ClipboardCheck,
+  Database,
+  FileClock,
+  Files,
+  LayoutDashboard,
+  Menu,
+  PackageOpen,
+  Settings,
+  X,
 } from "lucide-react";
+import {
+  attendanceTerminals,
+  divisions,
+  productionTypes,
+} from "@/data/mockOperations";
+import { useOperations } from "@/components/operations/OperationsProvider";
 
-const groups = [
-  { label:"Dashboard", href:"/dashboard", icon:LayoutDashboard },
-  { label:"Administrasi Produksi", icon:Factory, children:[
-    ["Laporan Produksi Maizena","laporan-produksi-maizena"],
-    ["Laporan Produksi Maizena RK","laporan-produksi-maizena-rk"],
-    ["Laporan Produksi Sagu","laporan-produksi-sagu"],
-    ["Produksi Tapioka 1 kg","produksi-tapioka-1kg"],
-    ["Produksi Tapioka 200 gr","produksi-tapioka-200gr"],
-    ["Produksi Tapioka 500 gr","produksi-tapioka-500gr"],
-    ["Produksi Tapioka 2 kg","produksi-tapioka-2kg"],
-    ["Timbangan Hasil Produksi","timbangan-hasil-produksi"],
-    ["Pemakaian Bahan Baku Produksi","pemakaian-bahan-baku-produksi"],
-  ]},
-  { label:"Administrasi Gudang", icon:Box, children:[
-    ["Pemakaian Benang","pemakaian-benang"],
-    ["Pemakaian Karung","pemakaian-karung"],
-    ["Serah Terima Hasil Produksi","serah-terima-hasil-produksi"],
-  ]},
-  { label:"Administrasi Operasional", icon:Recycle, children:[
-    ["Laporan Plastik/Kardus Bekas","laporan-plastik-kardus-bekas"],
-  ]},
-  { label:"Absensi Harian", icon:Users, children:[
-    ["Laporan Staff Gudang","laporan-staff-gudang"],
-    ["Laporan Penanggung Jawab","laporan-penanggung-jawab"],
-    ["Laporan Petugas Kebersihan","laporan-petugas-kebersihan"],
-  ]},
-  { label:"Approval", href:"/approvals", icon:ClipboardCheck },
-  { label:"Riwayat Laporan", href:"/reports", icon:FileClock },
+const navigation = [
+  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { label: "Semua Laporan", href: "/reports", icon: Files },
+  { label: "Approval", href: "/approvals", icon: ClipboardCheck },
+  { label: "Riwayat Laporan", href: "/reports/history", icon: FileClock },
+  { label: "Master Data", href: "/master-data", icon: Database },
+  { label: "Pengaturan", href: "/settings", icon: Settings },
 ];
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const [open, setOpen] = useState(false);
-  const [expanded, setExpanded] = useState<string[]>(["Administrasi Produksi","Administrasi Gudang","Administrasi Operasional","Absensi Harian"]);
-  const title = groups.flatMap(g => g.href ? [{label:g.label,href:g.href}] : (g.children ?? []).map(([label,slug]) => ({label,href:`/reports/${slug}`}))).find(x => x.href === pathname)?.label ?? "PGA Operations";
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [currentDate, setCurrentDate] = useState("");
+  const { persistenceError } = useOperations();
 
-  const toggle = (label:string) => setExpanded(v => v.includes(label) ? v.filter(x => x !== label) : [...v,label]);
+  useEffect(() => {
+    setCurrentDate(
+      new Intl.DateTimeFormat("id-ID", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      }).format(new Date()),
+    );
+  }, []);
 
-  const nav = (
-    <aside className="flex h-full w-72 flex-col bg-[#132744] text-white">
-      <div className="flex h-16 items-center gap-3 border-b border-white/10 px-5">
-        <div className="grid h-9 w-9 place-items-center rounded-lg bg-[#33a474]"><PackageOpen size={20}/></div>
-        <div><p className="font-bold leading-tight">PGA Operations</p><p className="text-[11px] text-slate-300">Internal Operations</p></div>
+  const title = useMemo(() => {
+    if (pathname === "/dashboard") return "Dashboard";
+    if (pathname === "/reports") return "Semua Laporan";
+    if (pathname === "/reports/history") return "Riwayat Laporan";
+    if (pathname === "/approvals") return "Approval Laporan";
+    if (pathname === "/master-data") return "Master Data";
+    if (pathname === "/settings") return "Pengaturan";
+    if (pathname.startsWith("/terminals/")) {
+      const terminalId = pathname.split("/")[2];
+      const terminal = attendanceTerminals.find((item) => item.id === terminalId);
+      return productionTypes.find((type) => type.id === terminal?.productionTypeId)?.name
+        ?? "Terminal Absensi";
+    }
+    if (pathname.startsWith("/divisions/production")) {
+      const typeId = pathname.split("/")[3];
+      return productionTypes.find((type) => type.id === typeId)?.name ?? "Workspace Produksi";
+    }
+    if (pathname.startsWith("/divisions/")) {
+      const divisionId = pathname.split("/")[2];
+      return divisions.find((division) => division.id === divisionId)?.name ?? "Workspace Divisi";
+    }
+    if (pathname.startsWith("/reports/")) {
+      const slug = pathname.split("/")[2];
+      return productionTypes.find((type) => type.id === slug)?.name ?? "Laporan Divisi";
+    }
+    return "PGA Operations System";
+  }, [pathname]);
+
+  const sidebar = (
+    <aside className="flex h-full w-[272px] flex-col bg-[#10233f] text-white">
+      <div className="flex h-[76px] items-center gap-3 border-b border-white/10 px-5">
+        <div className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-500 shadow-lg shadow-emerald-950/30">
+          <PackageOpen size={21} />
+        </div>
+        <div>
+          <p className="font-bold leading-tight">PGA Operations</p>
+          <p className="mt-1 text-[11px] text-slate-400">Operations management</p>
+        </div>
       </div>
-      <nav className="flex-1 overflow-y-auto px-3 py-4">
-        {groups.map((g) => {
-          const Icon = g.icon;
-          if (g.href) return (
-            <Link key={g.label} href={g.href} onClick={() => setOpen(false)}
-              className={`mb-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm ${pathname===g.href ? "bg-[#28a36a] text-white" : "text-slate-200 hover:bg-white/8"}`}>
-              <Icon size={18}/>{g.label}
+
+      <nav className="flex-1 space-y-1 px-3 py-5" aria-label="Navigasi utama">
+        <p className="mb-3 px-3 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">
+          Menu utama
+        </p>
+        {navigation.map(({ label, href, icon: Icon }) => {
+          const active =
+            pathname === href ||
+            (href === "/reports" && pathname.startsWith("/reports/") && pathname !== "/reports/history");
+          return (
+            <Link
+              key={href}
+              href={href}
+              onClick={() => setMobileOpen(false)}
+              className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
+                active
+                  ? "bg-emerald-500 text-white shadow-md shadow-emerald-950/20"
+                  : "text-slate-300 hover:bg-white/7 hover:text-white"
+              }`}
+            >
+              <Icon size={18} strokeWidth={1.8} />
+              {label}
             </Link>
           );
-          const isOpen = expanded.includes(g.label);
-          return <div key={g.label} className="mb-1">
-            <button onClick={() => toggle(g.label)} className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-slate-200 hover:bg-white/8">
-              <Icon size={18}/><span className="flex-1 text-left">{g.label}</span><ChevronDown size={15} className={`transition ${isOpen?"rotate-180":""}`}/>
-            </button>
-            {isOpen && <div className="ml-5 border-l border-white/10 py-1">
-              {g.children?.map(([label,slug]) => {
-                const href=`/reports/${slug}`;
-                return <Link key={slug} href={href} onClick={() => setOpen(false)} className={`block rounded-r-lg border-l-2 py-2 pl-4 pr-2 text-xs ${pathname===href?"border-[#4bd09a] bg-white/8 text-white":"border-transparent text-slate-300 hover:text-white"}`}>{label}</Link>;
-              })}
-            </div>}
-          </div>;
         })}
       </nav>
-      <div className="border-t border-white/10 p-4 text-xs text-slate-400">PGA Operations v0.1</div>
+
+      <div className="border-t border-white/10 px-5 py-4">
+        <p className="text-xs font-semibold text-slate-300">Mode demonstrasi</p>
+        <p className="mt-1 text-[11px] text-slate-500">Data mock tersimpan di browser</p>
+      </div>
     </aside>
   );
 
   return (
-    <div className="min-h-screen lg:flex">
-      <div className="hidden lg:block lg:fixed lg:inset-y-0 lg:left-0">{nav}</div>
-      {open && <div className="fixed inset-0 z-50 lg:hidden"><button aria-label="Tutup navigasi" className="absolute inset-0 bg-slate-950/50" onClick={() => setOpen(false)} /><div className="absolute inset-y-0 left-0">{nav}<button onClick={() => setOpen(false)} className="absolute right-3 top-3 text-white"><X size={20}/></button></div></div>}
-      <div className="w-full lg:pl-72">
-        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-slate-200 bg-white px-4 lg:px-8">
-          <div className="flex items-center gap-3"><button className="rounded-lg p-2 lg:hidden" onClick={() => setOpen(true)} aria-label="Buka navigasi"><Menu size={21}/></button><div><h1 className="text-base font-bold text-slate-800 lg:text-lg">{title}</h1><p className="hidden text-xs text-slate-500 sm:block">Senin, 23 November 2026</p></div></div>
-          <div className="flex items-center gap-3"><div className="hidden text-right sm:block"><p className="text-xs font-semibold">Administrator Demo</p><p className="text-[11px] text-slate-500">Mock role view</p></div><div className="grid h-9 w-9 place-items-center rounded-full bg-[#132744] text-xs font-bold text-white">AD</div></div>
+    <div className="min-h-screen bg-slate-50 lg:flex">
+      <div className="fixed inset-y-0 left-0 z-30 hidden lg:block">{sidebar}</div>
+      {mobileOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <button
+            aria-label="Tutup navigasi"
+            className="absolute inset-0 bg-slate-950/50"
+            onClick={() => setMobileOpen(false)}
+          />
+          <div className="absolute inset-y-0 left-0">
+            {sidebar}
+            <button
+              onClick={() => setMobileOpen(false)}
+              className="absolute right-3 top-5 rounded-lg p-2 text-white hover:bg-white/10"
+              aria-label="Tutup menu"
+            >
+              <X size={20} />
+            </button>
+          </div>
+        </div>
+      )}
+      <div className="w-full lg:pl-[272px]">
+        <header className="sticky top-0 z-20 flex min-h-[76px] items-center justify-between border-b border-slate-200 bg-white/95 px-4 backdrop-blur md:px-8">
+          <div className="flex items-center gap-3">
+            <button
+              className="rounded-lg p-2 text-slate-600 hover:bg-slate-100 lg:hidden"
+              onClick={() => setMobileOpen(true)}
+              aria-label="Buka navigasi"
+            >
+              <Menu size={21} />
+            </button>
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-700">
+                PGA Operations System
+              </p>
+              <h1 className="mt-0.5 text-lg font-bold text-slate-900">{title}</h1>
+              {currentDate && (
+                <p className="mt-0.5 hidden text-xs capitalize text-slate-500 sm:block">
+                  {currentDate}
+                </p>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center gap-2 sm:gap-4">
+            <button
+              type="button"
+              aria-label="Notifikasi demo"
+              title="Notifikasi demo"
+              className="relative grid h-10 w-10 place-items-center rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50"
+            >
+              <Bell size={18} />
+              <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-emerald-500 ring-2 ring-white" />
+            </button>
+            <div className="hidden text-right sm:block">
+              <p className="text-sm font-semibold text-slate-800">Administrator Demo</p>
+              <p className="text-[11px] text-slate-500">Profil tampilan</p>
+            </div>
+            <div className="grid h-10 w-10 place-items-center rounded-full bg-[#10233f] text-xs font-bold text-white ring-2 ring-emerald-100">
+              AD
+            </div>
+          </div>
         </header>
-        <main className="p-4 md:p-6 lg:p-8">{children}</main>
+        <main className="mx-auto max-w-[1600px] p-4 md:p-6 lg:p-8">
+          {persistenceError && (
+            <div
+              role="alert"
+              className="mb-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
+            >
+              {persistenceError}
+            </div>
+          )}
+          {children}
+        </main>
       </div>
     </div>
   );

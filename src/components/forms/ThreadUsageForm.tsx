@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { mockEmployees } from "@/data/mockEmployees";
-import { MachineThreadUsage } from "@/types/threadUsage";
+import { useOperations } from "@/components/operations/OperationsProvider";
+import { getLocalDateString } from "@/data/mockOperations";
+import type { MachineThreadUsage } from "@/types/threadUsage";
 
 type MachineValues = {
   openingStock: string;
@@ -27,14 +28,16 @@ const emptyMachine = (): MachineValues => ({
 export default function ThreadUsageForm({
   onSave,
 }: {
-  onSave: (data: ThreadUsageFormData) => void;
+  onSave: (data: ThreadUsageFormData) => Promise<void>;
 }) {
-  const [reportDate, setReportDate] = useState("2026-11-23");
+  const { data } = useOperations();
+  const [reportDate, setReportDate] = useState(getLocalDateString);
   const [submittedBy, setSubmittedBy] = useState("");
   const [machines, setMachines] = useState<MachineValues[]>(
     machineNumbers.map(() => emptyMachine()),
   );
   const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
 
   const updateMachine = (
     index: number,
@@ -48,7 +51,7 @@ export default function ThreadUsageForm({
     );
   };
 
-  const submit = (status: ThreadUsageFormData["status"]) => {
+  const submit = async (status: ThreadUsageFormData["status"]) => {
     if (!reportDate || !submittedBy) {
       setError("Tanggal laporan dan pegawai pelapor wajib diisi.");
       return;
@@ -77,7 +80,18 @@ export default function ThreadUsageForm({
     }
 
     setError("");
-    onSave({ reportDate, submittedBy, status, machineUsage });
+    setSaving(true);
+    try {
+      await onSave({ reportDate, submittedBy, status, machineUsage });
+    } catch (saveError) {
+      setError(
+        saveError instanceof Error
+          ? saveError.message
+          : "Laporan gagal disimpan. Silakan coba kembali.",
+      );
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -112,9 +126,9 @@ export default function ThreadUsageForm({
               className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2.5"
             >
               <option value="">Pilih pegawai</option>
-              {mockEmployees.map((employee) => (
-                <option key={employee} value={employee}>
-                  {employee}
+              {data.employees.map((employee) => (
+                <option key={employee.id} value={employee.name}>
+                  {employee.name}
                 </option>
               ))}
             </select>
@@ -198,16 +212,20 @@ export default function ThreadUsageForm({
         </div>
         <div className="flex flex-col-reverse gap-3 border-t px-5 py-4 sm:flex-row sm:justify-end">
           <button
+            type="button"
+            disabled={saving}
             onClick={() => submit("draft")}
-            className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-semibold hover:bg-slate-50"
+            className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-semibold hover:bg-slate-50 disabled:opacity-60"
           >
-            Simpan Draft
+            {saving ? "Menyimpan..." : "Simpan Draft"}
           </button>
           <button
+            type="button"
+            disabled={saving}
             onClick={() => submit("submitted")}
-            className="rounded-lg bg-[#247f58] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#1d6d4b]"
+            className="rounded-lg bg-[#247f58] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#1d6d4b] disabled:opacity-60"
           >
-            Submit Laporan
+            {saving ? "Menyimpan..." : "Submit Laporan"}
           </button>
         </div>
       </section>

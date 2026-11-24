@@ -1,17 +1,5 @@
-"use client";
+import ReportsIndex from "@/components/operations/ReportsIndex";
 
-import { useState } from "react";
-import { Eye, Search } from "lucide-react";
-import { mockReports } from "@/data/mockReports";
-import ReportStatusBadge from "@/components/reports/ReportStatusBadge";
-import ReportDetail from "@/components/reports/ReportDetail";
-import { Report } from "@/types/report";
-
-export default function HistoryPage(){
- const [search,setSearch]=useState("");const [department,setDepartment]=useState("all");const [status,setStatus]=useState("all");const [date,setDate]=useState("");const [selected,setSelected]=useState<Report|null>(null);
- const rows=mockReports.filter(r=>(!search||r.reportNumber.toLowerCase().includes(search.toLowerCase())||r.reportName.toLowerCase().includes(search.toLowerCase()))&&(department==="all"||r.department===department)&&(status==="all"||r.status===status)&&(!date||r.reportDate===date));
- return <div className="space-y-5"><div><p className="text-sm text-slate-500">Central History</p><h2 className="mt-1 text-xl font-bold">Riwayat Laporan</h2></div>
- <div className="grid gap-3 rounded-xl border border-slate-200 bg-white p-4 md:grid-cols-4"><div className="relative md:col-span-1"><Search className="absolute left-3 top-2.5 text-slate-400" size={18}/><input value={search} onChange={e=>setSearch(e.target.value)} className="w-full rounded-lg border border-slate-300 py-2 pl-10 pr-3 text-sm" placeholder="Cari laporan"/></div><select value={department} onChange={e=>setDepartment(e.target.value)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm"><option value="all">Semua departemen</option><option>Produksi</option><option>Gudang</option><option>Operasional</option><option>Absensi</option></select><input type="date" value={date} onChange={e=>setDate(e.target.value)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm"/><select value={status} onChange={e=>setStatus(e.target.value)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm"><option value="all">Semua status</option><option value="draft">Draft</option><option value="submitted">Submitted</option><option value="under_review">Under Review</option><option value="revision_requested">Revision Requested</option><option value="approved">Approved</option><option value="collected">Collected</option></select></div>
- <div className="overflow-hidden rounded-xl border border-slate-200 bg-white"><div className="overflow-x-auto"><table className="w-full min-w-[860px] text-left text-sm"><thead className="bg-slate-50 text-xs uppercase text-slate-500"><tr><th className="px-5 py-3">Nomor</th><th className="px-5 py-3">Nama Laporan</th><th className="px-5 py-3">Departemen</th><th className="px-5 py-3">Pengirim</th><th className="px-5 py-3">Tanggal</th><th className="px-5 py-3">Status</th><th className="px-5 py-3"></th></tr></thead><tbody className="divide-y">{rows.map(r=><tr key={r.id} className="hover:bg-slate-50"><td className="px-5 py-3 font-medium">{r.reportNumber}</td><td className="px-5 py-3">{r.reportName}</td><td className="px-5 py-3">{r.department}</td><td className="px-5 py-3">{r.submittedBy}</td><td className="px-5 py-3">{r.reportDate}</td><td className="px-5 py-3"><ReportStatusBadge status={r.status}/></td><td className="px-5 py-3"><button onClick={()=>setSelected(r)} className="rounded p-1.5 hover:bg-slate-100"><Eye size={17}/></button></td></tr>)}</tbody></table></div></div>
- <ReportDetail report={selected} onClose={()=>setSelected(null)} /></div>;
+export default function ReportsPage() {
+  return <ReportsIndex />;
 }

@@ -10,7 +10,7 @@ export interface Report {
   id: string;
   reportNumber: string;
   reportName: string;
-  department: "Produksi" | "Gudang" | "Operasional" | "Absensi";
+  department: "Produksi" | "Gudang" | "Operasional" | "Absensi" | "Kebersihan";
   reportDate: string;
   submittedBy: string;
   status: ReportStatus;
