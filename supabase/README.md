@@ -25,7 +25,7 @@ Then run `npm run dev`. The app loads data from `GET /api/operations`; scan, rep
 
 ## Netlify preview safety
 
-`netlify.toml` configures the Next.js build only; it does not protect a site. The API is enabled for local development and Netlify Deploy Previews. To test on the production deploy, first protect **all deploys including production** with Netlify site password protection or team login, and keep the Supabase variables pointed at staging. Then set `OPERATIONS_API_ALLOW_PROTECTED_PRODUCTION=true` for the **Production** deploy context in Netlify. Without that explicit flag the API stays disabled in Production.
+`netlify.toml` configures the Next.js build only; it does not protect a site. The API is enabled locally during development. For Netlify Deploy Previews, set `OPERATIONS_API_ALLOW_DEPLOY_PREVIEW=true` in the **Deploy Previews** context. To test on the production deploy, first protect **all deploys including production** with Netlify site password protection or team login, keep the Supabase variables pointed at staging, then set `OPERATIONS_API_ALLOW_PROTECTED_PRODUCTION=true` in the **Production** context. Both variables need the **Functions** scope. Netlify's `CONTEXT`/`NETLIFY` build variables are not available to serverless functions at runtime, so the app uses explicit context-specific flags instead.
 
 The app does not have its own user authentication or authorization. Do not enable the production flag or expose this service-role-backed API on a public site. Ensure Netlify's access protection covers API requests as well as pages.
 

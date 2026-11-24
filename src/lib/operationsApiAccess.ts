@@ -2,14 +2,12 @@ import "server-only";
 
 export function getOperationsApiUnavailableResponse(): Response | null {
   const isLocalDevelopment = process.env.NODE_ENV !== "production";
-  const isNetlifyDeployPreview =
-    process.env.NETLIFY === "true" && process.env.CONTEXT === "deploy-preview";
-  const isProtectedNetlifyProduction =
-    process.env.NETLIFY === "true" &&
-    process.env.CONTEXT === "production" &&
+  const isAllowedDeployPreview =
+    process.env.OPERATIONS_API_ALLOW_DEPLOY_PREVIEW === "true";
+  const isAllowedProtectedProduction =
     process.env.OPERATIONS_API_ALLOW_PROTECTED_PRODUCTION === "true";
 
-  if (isLocalDevelopment || isNetlifyDeployPreview || isProtectedNetlifyProduction) {
+  if (isLocalDevelopment || isAllowedDeployPreview || isAllowedProtectedProduction) {
     return null;
   }
 
